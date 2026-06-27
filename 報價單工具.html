@@ -48,8 +48,9 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 /* Item Cards */
 .item-card{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:9px;margin-bottom:8px;}
 .item-card:hover{border-color:var(--red-d);}
-.item-main{display:grid;grid-template-columns:52px 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:5px;align-items:center;}
-.item-hdr{display:grid;grid-template-columns:52px 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:6px;}
+.item-main{display:grid;grid-template-columns:auto 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:5px;align-items:center;}
+.item-hdr{display:grid;grid-template-columns:auto 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:6px;}
+.item-code-input{min-width:48px;}
 .item-hdr span{font-size:10px;color:var(--silver);text-align:center;}
 .item-card input{background:var(--mid);border:1px solid var(--border);border-radius:3px;color:var(--white);padding:5px 6px;font-size:12px;font-family:inherit;width:100%;}
 .item-card input:focus{outline:none;border-color:var(--red);}
@@ -93,6 +94,7 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 .inv-table thead th{color:#FFF;padding:8px 9px;text-align:center;font-weight:600;letter-spacing:.5px;font-size:12px;border:1px solid #1A1A1A;}
 .inv-table thead th.t-name,.inv-table thead th.t-note{text-align:left;}
 .inv-table tbody td{padding:7px 9px;border:1px solid #DADADA;text-align:center;vertical-align:middle;font-size:12.5px;}
+.inv-table td:nth-child(2),.inv-table th:nth-child(2){white-space:nowrap;}
 .inv-table tbody td.t-name,.inv-table tbody td.t-note{text-align:left;}
 .inv-table tbody td.t-note{font-size:12px;color:#444;}
 .inv-table tbody td.t-num{text-align:right;}
@@ -287,7 +289,7 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
       <thead>
         <tr>
           <th style="width:32px" data-i18n="t_no">#</th>
-          <th style="width:54px" data-i18n="t_code">品號</th>
+          <th style="white-space:nowrap" data-i18n="t_code">品號</th>
           <th class="t-name" data-i18n="t_name">品　名</th>
           <th style="width:46px" data-i18n="t_unit">單位</th>
           <th style="width:46px" data-i18n="t_qty">數量</th>
@@ -448,10 +450,10 @@ function setItem(id, field, val){
 
 function renderItems(){
   const c = document.getElementById('items-container');
-  c.innerHTML = items.map(it=>`
+  const html = items.map(it=>`
     <div class="item-card" data-id="${it.id}">
       <div class="item-main">
-        <input type="text"   placeholder="${t('iph_code')}" value="${esc(it.code)}"  onchange="setItem(${it.id},'code',this.value)">
+        <input type="text"   class="item-code-input" placeholder="${t('iph_code')}" value="${esc(it.code)}"  onchange="setItem(${it.id},'code',this.value)" oninput="autoResizeCode(this)">
         <input type="text"   placeholder="${t('iph_name')}" value="${esc(it.name)}"  onchange="setItem(${it.id},'name',this.value)">
         <input type="text"   placeholder="${t('iph_unit')}" value="${esc(it.unit)}"  onchange="setItem(${it.id},'unit',this.value)">
         <input type="number" placeholder="${t('col_qty')}"  value="${it.qty}" min="0" step="1" onchange="setItem(${it.id},'qty',this.value)">
@@ -464,6 +466,18 @@ function renderItems(){
         <input type="text" placeholder="${t('iph_note')}" value="${esc(it.note)}" onchange="setItem(${it.id},'note',this.value)">
       </div>
     </div>`).join('');
+  c.innerHTML = html;
+  c.querySelectorAll('.item-code-input').forEach(autoResizeCode);
+}
+
+/* ── Auto-resize 品號 input ── */
+function autoResizeCode(el){
+  const span = document.createElement('span');
+  span.style.cssText = 'position:absolute;visibility:hidden;font-size:12px;font-family:inherit;white-space:nowrap;padding:5px 6px;';
+  span.textContent = el.value || el.placeholder || '';
+  document.body.appendChild(span);
+  el.style.width = Math.max(48, span.offsetWidth + 8) + 'px';
+  document.body.removeChild(span);
 }
 
 /* ── Helpers ── */
