@@ -350,8 +350,6 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 
 <script>
 /* ── ERP Import ── */
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
 function handleImport(file) {
   if (!file) return;
   document.getElementById('erp-file').value = '';
@@ -376,17 +374,25 @@ function handleImport(file) {
       setTimeout(() => { hint.textContent = '支援鼎新A1 PDF'; hint.className = 'import-hint'; }, 3000);
     })
     .catch(e => {
-      console.error(e);
-      hint.textContent = '解析失敗，請確認為鼎新A1格式';
+      console.error('[ERP Import Error]', e);
+      hint.textContent = '錯誤：' + e.message;
       hint.className = 'import-hint import-err';
     });
 }
 
 async function parsePDF(file) {
+  if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js 未載入，請確認網路連線');
+
+  // disable worker to avoid file:// protocol restriction
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
   const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const pdf = await pdfjsLib.getDocument({ data: buf, disableWorker: true }).promise;
   const page = await pdf.getPage(1);
   const content = await page.getTextContent();
+
+  console.log('[ERP] total text items:', content.items.length);
+  console.log('[ERP] first 20 items:', content.items.slice(0, 20).map(i => ({ str: i.str, x: Math.round(i.transform[4]), y: Math.round(i.transform[5]) })));
 
   // Group text items by Y coordinate, sort each row by X
   const rowMap = {};
@@ -413,6 +419,7 @@ async function parsePDF(file) {
       return text;
     });
 
+  console.log('[ERP] extracted rows:', rows);
   parseERPRows(rows);
 }
 
