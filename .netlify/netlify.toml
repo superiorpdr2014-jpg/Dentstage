@@ -7,7 +7,7 @@ redirects = []
 [functions."*"]
 
 [build]
-publish = "C:\\Users\\User\\Downloads\\Myke_Agent"
+publish = "C:\\Users\\User\\Desktop\\Dentstage凹痕工廠資料"
 publishOrigin = "default"
 
 [build.environment]
