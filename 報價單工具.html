@@ -380,6 +380,8 @@ function handleImport(file) {
     });
 }
 
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174';
+
 async function parsePDF(file) {
   if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js 未載入，請確認網路連線');
 
@@ -387,12 +389,21 @@ async function parsePDF(file) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
   const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buf, disableWorker: true }).promise;
+  const pdf = await pdfjsLib.getDocument({
+    data: buf,
+    disableWorker: true,
+    cMapUrl: PDFJS_CDN + '/cmaps/',   // 讓中文(CJK)字型正確解碼
+    cMapPacked: true
+  }).promise;
   const page = await pdf.getPage(1);
   const content = await page.getTextContent();
 
   console.log('[ERP] total text items:', content.items.length);
-  console.log('[ERP] first 20 items:', content.items.slice(0, 20).map(i => ({ str: i.str, x: Math.round(i.transform[4]), y: Math.round(i.transform[5]) })));
+
+  // 文字項目太少 → 此 PDF 為圖片格式，無文字層
+  if (content.items.length < 20) {
+    throw new Error('此 PDF 為圖片格式（無文字層），請改用文字版匯出');
+  }
 
   // Group text items by Y coordinate, sort each row by X
   const rowMap = {};

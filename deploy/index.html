@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DentStage 凹痕工廠 — 報價單工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -48,8 +49,9 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 /* Item Cards */
 .item-card{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:9px;margin-bottom:8px;}
 .item-card:hover{border-color:var(--red-d);}
-.item-main{display:grid;grid-template-columns:52px 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:5px;align-items:center;}
-.item-hdr{display:grid;grid-template-columns:52px 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:6px;}
+.item-main{display:grid;grid-template-columns:auto 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:5px;align-items:center;}
+.item-hdr{display:grid;grid-template-columns:auto 1fr 40px 52px 72px 72px 26px;gap:4px;margin-bottom:6px;}
+.item-code-input{min-width:48px;}
 .item-hdr span{font-size:10px;color:var(--silver);text-align:center;}
 .item-card input{background:var(--mid);border:1px solid var(--border);border-radius:3px;color:var(--white);padding:5px 6px;font-size:12px;font-family:inherit;width:100%;}
 .item-card input:focus{outline:none;border-color:var(--red);}
@@ -62,6 +64,14 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 .btn-del:hover{color:#FF4444;}
 .btn-add{width:100%;background:transparent;border:1px dashed var(--border);border-radius:4px;color:var(--silver);cursor:pointer;font-size:12px;padding:7px;font-family:inherit;transition:all .15s;}
 .btn-add:hover{border-color:var(--red);color:var(--red-h);}
+
+/* Import Bar */
+.fp-import{padding:8px 16px;background:var(--dark);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.btn-import{background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--silver);cursor:pointer;font-size:11px;padding:6px 12px;font-family:inherit;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+.btn-import:hover{border-color:var(--red);color:var(--red-h);}
+.import-hint{font-size:10px;color:var(--silver);opacity:.7;flex:1;}
+.import-ok{color:#4CAF50!important;opacity:1!important;}
+.import-err{color:#FF5555!important;opacity:1!important;}
 
 .fp-footer{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;}
 .btn-print{flex:1;background:var(--red);color:var(--white);border:none;border-radius:6px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;transition:background .15s;}
@@ -93,6 +103,7 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 .inv-table thead th{color:#FFF;padding:8px 9px;text-align:center;font-weight:600;letter-spacing:.5px;font-size:12px;border:1px solid #1A1A1A;}
 .inv-table thead th.t-name,.inv-table thead th.t-note{text-align:left;}
 .inv-table tbody td{padding:7px 9px;border:1px solid #DADADA;text-align:center;vertical-align:middle;font-size:12.5px;}
+.inv-table td:nth-child(2),.inv-table th:nth-child(2){white-space:nowrap;}
 .inv-table tbody td.t-name,.inv-table tbody td.t-note{text-align:left;}
 .inv-table tbody td.t-note{font-size:12px;color:#444;}
 .inv-table tbody td.t-num{text-align:right;}
@@ -143,6 +154,14 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
       <button class="lt-btn active" id="btn-zh" onclick="setLang('zh')">中文</button>
       <button class="lt-btn"        id="btn-en" onclick="setLang('en')">EN</button>
     </div>
+  </div>
+
+  <div class="fp-import">
+    <input type="file" id="erp-file" accept=".pdf" style="display:none" onchange="handleImport(this.files[0])">
+    <button class="btn-import" onclick="document.getElementById('erp-file').click()">
+      📂 匯入 ERP 報價單
+    </button>
+    <span class="import-hint" id="import-hint">支援鼎新A1 PDF</span>
   </div>
 
   <div class="fp-body">
@@ -287,7 +306,7 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
       <thead>
         <tr>
           <th style="width:32px" data-i18n="t_no">#</th>
-          <th style="width:54px" data-i18n="t_code">品號</th>
+          <th style="white-space:nowrap" data-i18n="t_code">品號</th>
           <th class="t-name" data-i18n="t_name">品　名</th>
           <th style="width:46px" data-i18n="t_unit">單位</th>
           <th style="width:46px" data-i18n="t_qty">數量</th>
@@ -330,6 +349,171 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 </div>
 
 <script>
+/* ── ERP Import ── */
+function handleImport(file) {
+  if (!file) return;
+  document.getElementById('erp-file').value = '';
+  const hint = document.getElementById('import-hint');
+
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    hint.textContent = '僅支援鼎新A1 PDF 格式';
+    hint.className = 'import-hint import-err';
+    return;
+  }
+  if (items.some(i => i.code || i.name)) {
+    if (!confirm('匯入會覆蓋現有資料，確定繼續？')) return;
+  }
+
+  hint.textContent = '解析中…';
+  hint.className = 'import-hint';
+
+  parsePDF(file)
+    .then(() => {
+      hint.textContent = '✓ 匯入成功';
+      hint.className = 'import-hint import-ok';
+      setTimeout(() => { hint.textContent = '支援鼎新A1 PDF'; hint.className = 'import-hint'; }, 3000);
+    })
+    .catch(e => {
+      console.error('[ERP Import Error]', e);
+      hint.textContent = '錯誤：' + e.message;
+      hint.className = 'import-hint import-err';
+    });
+}
+
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174';
+
+async function parsePDF(file) {
+  if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js 未載入，請確認網路連線');
+
+  // disable worker to avoid file:// protocol restriction
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({
+    data: buf,
+    disableWorker: true,
+    cMapUrl: PDFJS_CDN + '/cmaps/',   // 讓中文(CJK)字型正確解碼
+    cMapPacked: true
+  }).promise;
+  const page = await pdf.getPage(1);
+  const content = await page.getTextContent();
+
+  console.log('[ERP] total text items:', content.items.length);
+
+  // 文字項目太少 → 此 PDF 為圖片格式，無文字層
+  if (content.items.length < 20) {
+    throw new Error('此 PDF 為圖片格式（無文字層），請改用文字版匯出');
+  }
+
+  // Group text items by Y coordinate, sort each row by X
+  const rowMap = {};
+  for (const item of content.items) {
+    if (!item.str.trim()) continue;
+    const y = Math.round(item.transform[5] / 2) * 2;
+    if (!rowMap[y]) rowMap[y] = [];
+    rowMap[y].push({ x: item.transform[4], str: item.str, w: item.width || 0 });
+  }
+
+  // PDF Y=0 is bottom, so sort descending → top of page first
+  const rows = Object.entries(rowMap)
+    .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]))
+    .map(([, cells]) => {
+      const sorted = cells.sort((a, b) => a.x - b.x);
+      let text = '';
+      for (let i = 0; i < sorted.length; i++) {
+        const c = sorted[i];
+        if (i === 0) { text = c.str; continue; }
+        const prev = sorted[i - 1];
+        const gap = c.x - (prev.x + prev.w);
+        text += (gap > 3 ? ' ' : '') + c.str;
+      }
+      return text;
+    });
+
+  console.log('[ERP] extracted rows:', rows);
+  parseERPRows(rows);
+}
+
+function parseERPRows(rows) {
+  const find = (pat) => { for (const r of rows) { const m = r.match(pat); if (m) return m; } return null; };
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val.trim(); };
+
+  // ── 客戶資訊 ──
+  const custM = find(/客戶名稱[：:]\s*(.+?)(?=\s{2,}|訂單日期|$)/);
+  if (custM) setVal('f-customer', custM[1]);
+
+  const dateM = find(/訂單日期[：:]\s*(\d{4}[\/\-]\d{2}[\/\-]\d{2})/);
+  if (dateM) {
+    const [y, mo, d] = dateM[1].split(/[\/\-]/);
+    setVal('f-date', `${y}-${mo}-${d}`);
+  }
+
+  const contactRow = rows.find(r => /聯絡人/.test(r));
+  if (contactRow) {
+    const cm = contactRow.match(/聯絡人[：:]\s*(\S+)/);
+    if (cm && cm[1] !== '—') setVal('f-contact', cm[1]);
+    const pm = contactRow.match(/電話[：:]\s*(\S+)/);
+    if (pm) setVal('f-ctel', pm[1]);
+    const om = contactRow.match(/訂單單號[：:]\s*(\S+)/);
+    if (om) setVal('f-ono', om[1]);
+  }
+
+  const addrM = find(/送貨地址[：:]\s*(.+)/);
+  if (addrM) setVal('f-addr', addrM[1].replace(/\s*頁次.*/, ''));
+
+  const notesRow = rows.find(r => /^備註[：:]/.test(r.trim()));
+  if (notesRow) {
+    const nm = notesRow.match(/^備註[：:]\s*(.+)/);
+    if (nm) setVal('f-notes', nm[1].replace(/合計金額.*/, '').trim());
+  }
+
+  // ── 品項表格 ──
+  const headerIdx = rows.findIndex(r => /品號/.test(r) && /品名/.test(r));
+  if (headerIdx === -1) throw new Error('找不到品項表格標題');
+
+  const footerIdx = rows.findIndex((r, i) => i > headerIdx && /合計金額/.test(r));
+  const tableRows = rows.slice(headerIdx + 1, footerIdx > 0 ? footerIdx : undefined);
+
+  // 合併跨行品名（接續行不以大寫英數開頭）
+  const merged = [];
+  for (const row of tableRows) {
+    const t = row.trim();
+    if (!t) continue;
+    if (/^[A-Z][A-Z0-9]/.test(t)) {
+      merged.push(t);
+    } else if (merged.length > 0) {
+      merged[merged.length - 1] += ' ' + t;
+    }
+  }
+
+  // 解析每一行：CODE NAME UNIT QTY PRICE AMOUNT
+  const unitPat = /(組|個|式|支|包|套|片|條|瓶|罐|本)\s+(\d+(?:\.\d+)?)\s+([\d,]+)\s+([\d,]+)/;
+  const parsed = [];
+
+  for (const row of merged) {
+    const codeM = row.match(/^([A-Z][A-Z0-9\-\.]*)\s/);
+    if (!codeM) continue;
+
+    const code = codeM[1];
+    const rest = row.substring(codeM[0].length);
+    const itemM = rest.match(unitPat);
+    if (!itemM) continue;
+
+    const name = rest.substring(0, rest.indexOf(itemM[0])).trim();
+    const unit = itemM[1];
+    const qty  = parseFloat(itemM[2]);
+    const price = parseFloat(itemM[3].replace(/,/g, ''));
+
+    parsed.push({ id: Date.now() + Math.random(), code, name, unit, qty, price, note: '' });
+  }
+
+  if (parsed.length === 0) throw new Error('未解析到任何品項');
+
+  items = parsed;
+  renderItems();
+  upd();
+}
+
 /* ── Translations ── */
 const T = {
   zh: {
@@ -448,10 +632,10 @@ function setItem(id, field, val){
 
 function renderItems(){
   const c = document.getElementById('items-container');
-  c.innerHTML = items.map(it=>`
+  const html = items.map(it=>`
     <div class="item-card" data-id="${it.id}">
       <div class="item-main">
-        <input type="text"   placeholder="${t('iph_code')}" value="${esc(it.code)}"  onchange="setItem(${it.id},'code',this.value)">
+        <input type="text"   class="item-code-input" placeholder="${t('iph_code')}" value="${esc(it.code)}"  onchange="setItem(${it.id},'code',this.value)" oninput="autoResizeCode(this)">
         <input type="text"   placeholder="${t('iph_name')}" value="${esc(it.name)}"  onchange="setItem(${it.id},'name',this.value)">
         <input type="text"   placeholder="${t('iph_unit')}" value="${esc(it.unit)}"  onchange="setItem(${it.id},'unit',this.value)">
         <input type="number" placeholder="${t('col_qty')}"  value="${it.qty}" min="0" step="1" onchange="setItem(${it.id},'qty',this.value)">
@@ -464,6 +648,18 @@ function renderItems(){
         <input type="text" placeholder="${t('iph_note')}" value="${esc(it.note)}" onchange="setItem(${it.id},'note',this.value)">
       </div>
     </div>`).join('');
+  c.innerHTML = html;
+  c.querySelectorAll('.item-code-input').forEach(autoResizeCode);
+}
+
+/* ── Auto-resize 品號 input ── */
+function autoResizeCode(el){
+  const span = document.createElement('span');
+  span.style.cssText = 'position:absolute;visibility:hidden;font-size:12px;font-family:inherit;white-space:nowrap;padding:5px 6px;';
+  span.textContent = el.value || el.placeholder || '';
+  document.body.appendChild(span);
+  el.style.width = Math.max(48, span.offsetWidth + 8) + 'px';
+  document.body.removeChild(span);
 }
 
 /* ── Helpers ── */
