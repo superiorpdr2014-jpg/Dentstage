@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dentstage 凹痕工廠 — 會議紀錄 2026.06.22</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    background: #f4f4f4;
+    color: #222;
+    padding: 40px 20px;
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: #1a1a1a;
+    padding: 32px 48px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .header img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .header-text h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+  .header-text h2 {
+    font-size: 14px;
+    color: #c8c8c8;
+    font-weight: 400;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+  .header-badge {
+    margin-left: auto;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .header-badge .date {
+    font-size: 28px;
+    font-weight: 700;
+    color: #c0392b;
+    line-height: 1;
+  }
+  .header-badge .label {
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* Meta bar */
+  .meta-bar {
+    background: #c0392b;
+    padding: 12px 48px;
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 13px;
+  }
+  .meta-item span.label {
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  /* Body */
+  .body {
+    padding: 40px 48px;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 36px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-number {
+    background: #c0392b;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section-title h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+    border-bottom: 2px solid #c0392b;
+    padding-bottom: 2px;
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 13.5px;
+  }
+  th {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+    line-height: 1.7;
+  }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  tr:hover td { background: #fef0ef; }
+
+  /* List */
+  ul {
+    padding-left: 0;
+    list-style: none;
+  }
+  ul li {
+    padding: 6px 0 6px 20px;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.7;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  ul li::before {
+    content: "▸";
+    color: #c0392b;
+    position: absolute;
+    left: 0;
+    font-size: 12px;
+    top: 8px;
+  }
+  ul li:last-child { border-bottom: none; }
+
+  .sub-list {
+    margin-top: 4px;
+    padding-left: 16px;
+  }
+  .sub-list li {
+    font-size: 13px;
+    color: #444;
+    border-bottom: none;
+    padding: 2px 0 2px 16px;
+  }
+  .sub-list li::before {
+    content: "–";
+    color: #888;
+    font-size: 12px;
+    top: 4px;
+  }
+
+  /* Action items */
+  .action-table th:first-child { width: 40%; }
+  .action-table th:nth-child(2) { width: 25%; }
+  .action-table th:last-child { width: 35%; }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag-jay { background: #1a1a1a; color: #fff; }
+  .tag-chief { background: #c0392b; color: #fff; }
+  .tag-both { background: #555; color: #fff; }
+  .tag-pending { background: #e67e22; color: #fff; }
+  .tag-done { background: #27ae60; color: #fff; }
+
+  /* Process box */
+  .process-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+  }
+  .process-step {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .process-arrow {
+    color: #c0392b;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .process-note {
+    font-size: 12px;
+    color: #888;
+    margin-top: 8px;
+    padding-left: 4px;
+  }
+
+  /* Highlight box */
+  .highlight-box {
+    background: #fff8f8;
+    border-left: 4px solid #c0392b;
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: 13.5px;
+    line-height: 1.8;
+    border-radius: 0 4px 4px 0;
+  }
+  .highlight-box strong { color: #c0392b; }
+
+  /* Footer */
+  .footer {
+    background: #1a1a1a;
+    padding: 20px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer p {
+    font-size: 12px;
+    color: #888;
+  }
+  .footer .signature {
+    font-size: 12px;
+    color: #555;
+    text-align: right;
+  }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <img src="Dent Stage LOGO 圓 更新.png" alt="Dentstage Logo">
+    <div class="header-text">
+      <h1>DENTSTAGE 凹痕工廠</h1>
+      <h2>部門工作分配與業務流程規劃會議</h2>
+    </div>
+    <div class="header-badge">
+      <div class="date">2026.06.22</div>
+      <div class="label">MEETING MINUTES</div>
+    </div>
+  </div>
+
+  <!-- Meta bar -->
+  <div class="meta-bar">
+    <div class="meta-item"><span class="label">主持：</span>Jay</div>
+    <div class="meta-item"><span class="label">出席：</span>Jay、業務同仁</div>
+    <div class="meta-item"><span class="label">地點：</span>Dentstage 凹痕工廠</div>
+    <div class="meta-item"><span class="label">性質：</span>內部工作分配會議</div>
+  </div>
+
+  <div class="body">
+
+    <!-- 1. 人員職責分工 -->
+    <div class="section">
+      <div class="section-title">
+        <div class="section-number">1</div>
+        <h3>人員職責分工</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>工作項目</th>
+            <th>負責人</th>
+            <th>備註</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>採購（下單、帳號管理）</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td>Jay 提供各供應商網站帳號密碼給採購同仁</td>
+          </tr>
+          <tr>
+            <td>進貨驗收 / 倉管</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>7/1 入職後接手；Jay 採購完先 key 採購單，主任對單驗收</td>
+          </tr>
+          <tr>
+            <td>出貨 / 銷貨</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>不在時由業務同仁 cover</td>
+          </tr>
+          <tr>
+            <td>庫存扣帳（實體倉）</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>出貨後執行；網站庫存由系統自動扣</td>
+          </tr>
+          <tr>
+            <td>報價單出單</td>
+            <td><span class="tag tag-both">雙方皆可</span></td>
+            <td>Dingxin 上報價單負責人員須填寫本人姓名，不得出現對方名字</td>
+          </tr>
+          <tr>
+            <td>網站上架 / 下架</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td>電腦操作由 Jay 負責</td>
+          </tr>
+          <tr>
+            <td>網站庫存扣帳</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>非網站訂單的手動扣帳由主任執行</td>
+          </tr>
+          <tr>
+            <td>FB / IG 貼文</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>客訴 / 換貨 / 瑕疵品</td>
+            <td><span class="tag tag-jay">Jay（主力）</span></td>
+            <td>國外窗口由 Jay 負責；大陸客戶由主任配合</td>
+          </tr>
+          <tr>
+            <td>外訪廠商 / 學校</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>Jay 外出參訪時由主任代理</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="highlight-box" style="margin-top:14px;">
+        <strong>主任到職日：2026年7月1日</strong>，入職第一週先執行盤點作業，熟悉倉庫與系統後正式接手出貨、進貨、倉管工作。
+      </div>
+    </div>
+
+    <!-- 2. 採購供應商整理 -->
+    <div class="section">
+      <div class="section-title">
+        <div class="section-number">2</div>
+        <h3>採購供應商窗口整理</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>供應商</th>
+            <th>下單方式</th>
+            <th>付款 / 備註</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>KECO</td>
+            <td>網站下單（Jay 提供帳號密碼）</td>
+            <td>天鵬付款</td>
+          </tr>
+          <tr>
+            <td>VIP</td>
+            <td>FB 群組 / 微信群（Jay 已建群）</td>
+            <td>很久未購入，重新聯繫中</td>
+          </tr>
+          <tr>
+            <td>Altra</td>
+            <td>供應商直接下單 → 寄台灣</td>
+            <td>多品項需下架（已被取代）；大量下價待處理</td>
+          </tr>
+          <tr>
+            <td>Anson</td>
+            <td>窗口 Lisa（待確認聯繫方式）</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Blaine</td>
+            <td>網站下單（B-L-E-H-N）</td>
+            <td>可從網站直接訂，寄至 Altra 倉轉運</td>
+          </tr>
+          <tr>
+            <td>PDR Finesse（PTRFNS）</td>
+            <td>KECO / Dencroft 網站順便購買</td>
+            <td>無折扣；Dencroft 僅少量折扣</td>
+          </tr>
+          <tr>
+            <td>Dencroft</td>
+            <td>網站下單</td>
+            <td>頭（tips）需從網站購買；桿子（rods）另外談</td>
+          </tr>
+          <tr>
+            <td>Brickwick</td>
+            <td>Email 窗口（待補充）</td>
+            <td>8～9 折優惠，Jay 尚未聯繫，待銜接</td>
+          </tr>
+          <tr>
+            <td>Stanley / Stanliner</td>
+            <td>暫不開放</td>
+            <td>每樣東西較特殊，待 Jay 直接處理</td>
+          </tr>
+          <tr>
+            <td>自製品（金剛等）</td>
+            <td>由 Jay 聯絡廠商（採購負責）</td>
+            <td>Kenji 光板退款事宜（每片 20–30 RMB）待確認</td>
+          </tr>
+          <tr>
+            <td>Amazon（錘子）</td>
+            <td>透過 Sally 詢價</td>
+            <td>見下方討論事項</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 3. 銷貨流程規範 -->
+    <div class="section">
+      <div class="section-title">
+        <div class="section-number">3</div>
+        <h3>銷貨流程規範</h3>
+      </div>
+
+      <div class="highlight-box">
+        <strong>核心原則：收到款項即銷貨</strong>（不等出貨）
+      </div>
+
+      <p style="font-size:14px; margin: 14px 0 8px; font-weight:600;">■ 一般散客（網路下單 / 刷卡 / 匯款）</p>
+      <div class="process-flow">
+        <div class="process-step">客戶下單付款</div>
+        <div class="process-arrow">→</div>
+        <div class="process-step">確認收款</div>
+        <div class="process-arrow">→</div>
+        <div class="process-step">銷貨</div>
+        <div class="process-arrow">→</div>
+        <div class="process-step">出貨</div>
+      </div>
+
+      <p style="font-size:14px; margin: 14px 0 8px; font-weight:600;">■ 特殊情況：先出貨、後收款（學校 / 公司行號）</p>
+      <div class="process-flow">
+        <div class="process-step">確認訂單</div>
+        <div class="process-arrow">→</div>
+        <div class="process-step">出貨</div>
+        <div class="process-arrow">→</div>
+        <div class="process-step">銷貨</div>
+        <div class="process-arrow">→</div>
+        <div class="process-step">進入代結帳區</div>
+        <div class="process-arrow">→</div>
+        <div class="process-step">確認收款後結清</div>
+      </div>
+      <p class="process-note">「代結帳區」由主任管控，包含：客戶名稱、金額、已結/未結狀態，與 Jay / 天鵬共用雲端表格。</p>
+
+      <p style="font-size:14px; margin: 16px 0 8px; font-weight:600;">■ 帳款結算方式</p>
+      <ul>
+        <li>一般帳款（台幣）：直接與天鵬結算</li>
+        <li>主任月帳：與天鵬結算</li>
+        <li>人民幣帳款：與 Jay 結算（使用 Jay 帳戶）</li>
+        <li>現場預備金：NT$30,000（由天鵬每月補回）</li>
+      </ul>
+    </div>
+
+    <!-- 4. 大陸業務對接 -->
+    <div class="section">
+      <div class="section-title">
+        <div class="section-number">4</div>
+        <h3>大陸業務對接</h3>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>負責人</th>
+            <th>說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>嫂子（大陸代理）日常對接</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>原由 Jay 處理，7/1 後移交主任；嫂子已知情</td>
+          </tr>
+          <tr>
+            <td>微信客服窗口</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>使用公司手機；微信名稱建議改為「DentStage 張[主任姓名]」</td>
+          </tr>
+          <tr>
+            <td>大陸客戶網站下單</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td>Jay 確認後通知主任出貨</td>
+          </tr>
+          <tr>
+            <td>大陸倉庫存管理</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>移倉已完成；主任負責盤點與出貨給嫂子</td>
+          </tr>
+          <tr>
+            <td>大陸倉售價制定</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>主任負責管控成本與利潤，可調整售價</td>
+          </tr>
+          <tr>
+            <td>WhatsApp / 其他亞洲國際客戶</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td>非大陸地區國際客戶統一由 Jay 處理</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 5. 盤點計畫 -->
+    <div class="section">
+      <div class="section-title">
+        <div class="section-number">5</div>
+        <h3>盤點計畫</h3>
+      </div>
+      <ul>
+        <li>主任入職後第一週執行全倉盤點，作為熟悉倉庫與系統的實作訓練</li>
+        <li>盤點範圍：Dingxin 大陸倉倉別清單（Jay 已移入完畢，數量最完整）</li>
+        <li>盤點前需先確認中間進銷貨異動，避免數量差異</li>
+        <li>盤點完成後才可正式給嫂子（大陸倉）庫存數量</li>
+        <li>設定半年一次定期盤點制度</li>
+      </ul>
+      <div class="highlight-box" style="margin-top:12px;">
+        目前倉庫已部分盤點，移倉後有部分品項未即時銷貨扣帳，建議主任入職後<strong>優先清帳</strong>，避免庫存落差持續擴大。
+      </div>
+    </div>
+
+    <!-- 6. 討論事項 -->
+    <div class="section">
+      <div class="section-title">
+        <div class="section-number">6</div>
+        <h3>其他討論事項</h3>
+      </div>
+
+      <p style="font-size:14px; font-weight:600; margin-bottom:8px;">■ 錘子採購評估（Amazon / Sally）</p>
+      <ul>
+        <li>Sally 詢價結果：100支 × US$38.5 / 支，折扣後約 US$3,080（約 NT$98,560 + 運費）</li>
+        <li>建議零售定價 NT$360 / 支；給頂尖等批發客九折（NT$324）</li>
+        <li>毛利約 10%，但可預收款項再出貨，無庫存風險</li>
+        <li><strong>待辦：</strong>與頂尖確認是否接受九折 NT$324 / 支，確認後再決定是否下單</li>
+      </ul>
+
+      <p style="font-size:14px; font-weight:600; margin: 16px 0 8px;">■ 網站二手工具欄位</p>
+      <ul>
+        <li>網站目前欄位已滿（WooCommerce / WarpLayers 限制）</li>
+        <li>決議：將「設備」欄位併入「配件」，「收縮機 PTR」改標記為配件類</li>
+        <li><strong>待辦：</strong>大砲（網站管理員）執行合併，空出欄位給「二手工具」</li>
+      </ul>
+
+      <p style="font-size:14px; font-weight:600; margin: 16px 0 8px;">■ KeyLand 膠水補貨</p>
+      <ul>
+        <li>已下訂 20 包 × 1kg，等待 KeyLand 回覆中，若無回應再催促</li>
+      </ul>
+
+      <p style="font-size:14px; font-weight:600; margin: 16px 0 8px;">■ 工作效率問題（內部提醒）</p>
+      <ul>
+        <li>早餐訂購、分餐等非職責工作應委由店長安排，避免佔用正式上班時間</li>
+        <li>Jay 要求業務同仁提升工作效率，清楚知道自己每日任務</li>
+      </ul>
+    </div>
+
+    <!-- 7. 行動清單 -->
+    <div class="section">
+      <div class="section-title">
+        <div class="section-number">7</div>
+        <h3>行動清單 Action Items</h3>
+      </div>
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th>待辦事項</th>
+            <th>負責人</th>
+            <th>期限 / 狀態</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>提供 KECO 網站帳號密碼給採購同仁</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待辦</span></td>
+          </tr>
+          <tr>
+            <td>VIP / Brickwick / Anson Lisa 窗口資料補充</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待辦</span></td>
+          </tr>
+          <tr>
+            <td>與頂尖確認錘子九折報價（NT$324/支）</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待辦</span></td>
+          </tr>
+          <tr>
+            <td>催促 KeyLand 膠水訂單回覆</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待辦</span></td>
+          </tr>
+          <tr>
+            <td>通知大砲合併「設備」至「配件」欄位</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待辦</span></td>
+          </tr>
+          <tr>
+            <td>Kenji 光板退款金額確認（20–30 RMB/片）</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待辦</span></td>
+          </tr>
+          <tr>
+            <td>建立「代結帳區」雲端共用表格</td>
+            <td><span class="tag tag-both">Jay + 主任</span></td>
+            <td>7/1 主任到職前完成</td>
+          </tr>
+          <tr>
+            <td>主任報到日確認（7/1 入職）</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待確認</span></td>
+          </tr>
+          <tr>
+            <td>主任入職後執行全倉盤點</td>
+            <td><span class="tag tag-chief">主任</span></td>
+            <td>7/1 入職後第一週</td>
+          </tr>
+          <tr>
+            <td>微信公司手機交接給主任，更新顯示名稱</td>
+            <td><span class="tag tag-both">Jay + 主任</span></td>
+            <td>7/1 入職時</td>
+          </tr>
+          <tr>
+            <td>大陸倉售價與移倉清單交接給主任</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td>7/1 入職時</td>
+          </tr>
+          <tr>
+            <td>Altra 庫存下架（已被取代商品）並執行下價</td>
+            <td><span class="tag tag-jay">Jay</span></td>
+            <td><span class="tag tag-pending">待辦</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end body -->
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>Dentstage 凹痕工廠 PDR Tools ｜ www.dentstagetools.com.tw</p>
+    <div class="signature">
+      <p>紀錄整理：Myke AI</p>
+      <p>2026 年 6 月 22 日</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
