@@ -520,6 +520,18 @@ function parseERPRows(rows) {
   const addrM = find(new RegExp(sp('送貨地址') + '[：:]\\s*(.+)'));
   if (addrM) setVal('f-addr', addrM[1].replace(new RegExp('\\s*' + sp('頁次') + '.*'), '').trim());
 
+  // 業務（鼎新為人名，如「業務：周曉妤」）
+  const salesM = find(new RegExp(sp('業務') + '[：:]\\s*(.+?)(?=\\s{2,}|' + [sp('傳真'), sp('公司電話'), sp('電話'), sp('幣別')].join('|') + '|$)'));
+  if (salesM && salesM[1].trim()) setVal('f-sales', salesM[1].trim());
+
+  // 公司電話：優先「公司電話」標籤，否則取表頭未與聯絡人同列的「電話」(如 0982750400)，避免抓到客戶電話
+  const compTelRow = rows.find(r => new RegExp(sp('公司電話')).test(r))
+                  || rows.find(r => new RegExp(sp('電話')).test(r) && !new RegExp(sp('聯絡人')).test(r) && !new RegExp(sp('客戶')).test(r));
+  if (compTelRow) {
+    const ctm = compTelRow.match(new RegExp('(?:' + sp('公司電話') + '|' + sp('電話') + ')[：:]\\s*([\\d\\-()（）]+)'));
+    if (ctm) setVal('f-tel', ctm[1]);
+  }
+
   const notesRow = rows.find(r => new RegExp('^' + sp('備註') + '[：:]').test(r.trim()));
   if (notesRow) {
     const nm = notesRow.match(new RegExp('^' + sp('備註') + '[：:]\\s*(.+)'));
