@@ -130,16 +130,65 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 .sig-name{font-size:15px;font-weight:700;color:#111;margin-bottom:42px;}
 .sig-line{border-top:2px solid #111;}
 
+/* ── 響應式：手機 / 平板 ── */
+.invoice-scale{flex-shrink:0;transform-origin:top left;}
+.m-tabs{display:none;}
+
+@media(max-width:900px){
+  body{flex-direction:column;height:100dvh;overflow:hidden;}
+
+  .m-tabs{display:flex;flex-shrink:0;background:var(--dark);border-bottom:2px solid var(--red);}
+  .m-tab{flex:1;background:transparent;border:none;border-bottom:3px solid transparent;color:var(--silver);padding:13px;font-size:14px;font-weight:700;letter-spacing:1px;font-family:inherit;cursor:pointer;transition:color .15s,border-color .15s;}
+  .m-tab.active{color:var(--white);border-bottom-color:var(--red);}
+
+  .form-panel{width:100%;min-width:0;flex:1;min-height:0;height:auto;border-right:none;}
+  .preview-panel{flex:1;min-height:0;padding:14px 8px;align-items:flex-start;}
+
+  body[data-view="edit"] .preview-panel{display:none;}
+  body[data-view="preview"] .form-panel{display:none;}
+
+  /* 避免 iOS 點擊輸入框自動放大（字級需 ≥16px） */
+  .field input,.field select,.field textarea{font-size:16px;}
+
+  /* 品項卡片：兩列式排版，隱藏桌面欄位標題列 */
+  .item-hdr{display:none;}
+  .item-main{
+    grid-template-columns:repeat(5,1fr) 30px;
+    grid-template-areas:
+      "code code name name name del"
+      "unit qty  qty  price price amt";
+    gap:6px;align-items:center;
+  }
+  .item-main>*:nth-child(1){grid-area:code;}
+  .item-main>*:nth-child(2){grid-area:name;}
+  .item-main>*:nth-child(3){grid-area:unit;}
+  .item-main>*:nth-child(4){grid-area:qty;}
+  .item-main>*:nth-child(5){grid-area:price;}
+  .item-main>*:nth-child(6){grid-area:amt;}
+  .item-main>*:nth-child(7){grid-area:del;}
+  .item-card input{font-size:15px;padding:9px 7px;}
+  .item-code-input{width:100%!important;min-width:0;}
+  .btn-del{font-size:22px;}
+}
+
 @media print{
-  body{background:#FFF;overflow:visible;height:auto;}
+  body{background:#FFF;overflow:visible;height:auto;display:block;}
+  .m-tabs{display:none!important;}
   .form-panel{display:none!important;}
-  .preview-panel{padding:0;background:#FFF;overflow:visible;display:block;}
-  .invoice{box-shadow:none;width:100%;min-height:auto;}
+  .preview-panel{padding:0;background:#FFF;overflow:visible;display:block!important;}
+  .invoice-scale{transform:none!important;width:auto!important;height:auto!important;}
+  .invoice{box-shadow:none;width:100%;min-height:auto;transform:none!important;}
   @page{size:A4;margin:8mm 10mm;}
 }
 </style>
 </head>
-<body>
+<body data-view="edit">
+
+<!-- ════ MOBILE VIEW SWITCH ════ -->
+<div class="m-tabs">
+  <button class="m-tab active" data-mview="edit"    onclick="setView('edit')">✏️ 編輯</button>
+  <button class="m-tab"        data-mview="preview" onclick="setView('preview')">📄 預覽</button>
+</div>
 
 <!-- ════ FORM PANEL ════ -->
 <div class="form-panel">
@@ -277,6 +326,7 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
 
 <!-- ════ PREVIEW PANEL ════ -->
 <div class="preview-panel">
+<div class="invoice-scale" id="invoice-scale">
 <div class="invoice" id="invoice">
   <div class="inv-stripe"></div>
   <div class="inv-inner">
@@ -345,6 +395,7 @@ body{font-family:'Microsoft JhengHei','Noto Sans TC',sans-serif;background:var(-
     </div>
 
   </div>
+</div>
 </div>
 </div>
 
@@ -427,7 +478,7 @@ async function parsePDF(file) {
         const gap = c.x - (prev.x + prev.w);
         text += (gap > 3 ? ' ' : '') + c.str;
       }
-      return text;
+      return text.normalize('NFKC');   // 康熙部首(⼈⾞⾦…)/全形 → 正常字，否則標籤比對失敗
     });
 
   console.log('[ERP] extracted rows:', rows);
@@ -435,76 +486,82 @@ async function parsePDF(file) {
 }
 
 function parseERPRows(rows) {
+  // 鼎新標籤常被拆成單字（如「聯 絡 人」「電 話」），故所有中文標籤允許字間空白
+  const sp = (s) => s.split('').map(c => /[一-鿿]/.test(c) ? c + '\\s*' : c).join('');
   const find = (pat) => { for (const r of rows) { const m = r.match(pat); if (m) return m; } return null; };
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val.trim(); };
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el && val != null && String(val).trim()) el.value = String(val).trim(); };
 
   // ── 客戶資訊 ──
-  const custM = find(/客戶名稱[：:]\s*(.+?)(?=\s{2,}|訂單日期|$)/);
-  if (custM) setVal('f-customer', custM[1]);
+  const stop = '\\s{2,}|' + [sp('訂單日期'), sp('公司統編'), sp('統一編號'), sp('訂單編號')].join('|') + '|$';
+  const custM = find(new RegExp(sp('客戶名稱') + '[：:]\\s*(.+?)(?=' + stop + ')'));
+  if (custM) setVal('f-customer', custM[1].replace(/[（(][A-Za-z]?\d+[)）]\s*$/, '').trim());
 
-  const dateM = find(/訂單日期[：:]\s*(\d{4}[\/\-]\d{2}[\/\-]\d{2})/);
+  const dateM = find(new RegExp(sp('訂單日期') + '[：:]\\s*(\\d{4}[\\/\\-]\\d{1,2}[\\/\\-]\\d{1,2})'));
   if (dateM) {
     const [y, mo, d] = dateM[1].split(/[\/\-]/);
-    setVal('f-date', `${y}-${mo}-${d}`);
+    setVal('f-date', `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`);
   }
 
-  const contactRow = rows.find(r => /聯絡人/.test(r));
+  const contactRow = rows.find(r => new RegExp(sp('聯絡人')).test(r));
   if (contactRow) {
-    const cm = contactRow.match(/聯絡人[：:]\s*(\S+)/);
+    const cm = contactRow.match(new RegExp(sp('聯絡人') + '[：:]\\s*(\\S+)'));
     if (cm && cm[1] !== '—') setVal('f-contact', cm[1]);
-    const pm = contactRow.match(/電話[：:]\s*(\S+)/);
+    const pm = contactRow.match(new RegExp(sp('電話') + '[：:]\\s*([\\d\\-()（）]+)'));
     if (pm) setVal('f-ctel', pm[1]);
-    const om = contactRow.match(/訂單單號[：:]\s*(\S+)/);
-    if (om) setVal('f-ono', om[1]);
   }
 
-  const addrM = find(/送貨地址[：:]\s*(.+)/);
-  if (addrM) setVal('f-addr', addrM[1].replace(/\s*頁次.*/, ''));
+  const onoM = find(new RegExp('(?:' + sp('訂單單號') + '|' + sp('訂單編號') + ')[：:]\\s*(\\S+)'));
+  if (onoM) setVal('f-ono', onoM[1]);
 
-  const notesRow = rows.find(r => /^備註[：:]/.test(r.trim()));
+  // 客戶統編：明確標籤(公司統編/統一編號)，或客戶名稱後的 (8碼數字)
+  const taxM = find(new RegExp('(?:' + sp('公司統編') + '|' + sp('統一編號') + ')[：:]\\s*(\\d{8})')) || find(/[（(](\d{8})[)）]/);
+  if (taxM) setVal('f-taxid', taxM[1]);
+
+  const addrM = find(new RegExp(sp('送貨地址') + '[：:]\\s*(.+)'));
+  if (addrM) setVal('f-addr', addrM[1].replace(new RegExp('\\s*' + sp('頁次') + '.*'), '').trim());
+
+  const notesRow = rows.find(r => new RegExp('^' + sp('備註') + '[：:]').test(r.trim()));
   if (notesRow) {
-    const nm = notesRow.match(/^備註[：:]\s*(.+)/);
-    if (nm) setVal('f-notes', nm[1].replace(/合計金額.*/, '').trim());
+    const nm = notesRow.match(new RegExp('^' + sp('備註') + '[：:]\\s*(.+)'));
+    if (nm) setVal('f-notes', nm[1].replace(new RegExp(sp('合計金額') + '.*'), '').trim());
   }
 
   // ── 品項表格 ──
-  const headerIdx = rows.findIndex(r => /品號/.test(r) && /品名/.test(r));
+  const headerIdx = rows.findIndex(r => new RegExp(sp('品號')).test(r) && new RegExp(sp('品名')).test(r));
   if (headerIdx === -1) throw new Error('找不到品項表格標題');
 
-  const footerIdx = rows.findIndex((r, i) => i > headerIdx && /合計金額/.test(r));
+  const footerIdx = rows.findIndex((r, i) => i > headerIdx && new RegExp(sp('合計金額')).test(r));
   const tableRows = rows.slice(headerIdx + 1, footerIdx > 0 ? footerIdx : undefined);
 
-  // 合併跨行品名（接續行不以大寫英數開頭）
-  const merged = [];
+  // 品號可英數開頭（含純數字如 410-6087）；列尾為「單位 數量 單價 金額」
+  const unitPat = /(組|個|式|支|包|套|片|條|瓶|罐|本|桶|箱|張|對|入|公斤|kg|KG|g|ml|cc|pcs|PCS)\s+(\d+(?:\.\d+)?)\s+([\d,]+(?:\.\d+)?)\s+([\d,]+(?:\.\d+)?)/;
+  const codePat = /^([A-Z0-9][A-Z0-9\-\.\/]*)\s+/;
+  // 表尾／備註列，不得被當成品名續接
+  const skipPat = new RegExp('^(' + [sp('備註'), sp('合計'), sp('稅額'), sp('總金額'), sp('頁次'), sp('小計')].join('|') + ')');
+
+  // 同時具備「品號 + 單位/數量/單價/金額」才算新品項；其餘列視為上一筆品名的跨行續接
+  const parsed = [];
   for (const row of tableRows) {
     const t = row.trim();
     if (!t) continue;
-    if (/^[A-Z][A-Z0-9]/.test(t)) {
-      merged.push(t);
-    } else if (merged.length > 0) {
-      merged[merged.length - 1] += ' ' + t;
+    const codeM = t.match(codePat);
+    const itemM = t.match(unitPat);
+    if (codeM && itemM) {
+      const rest = t.substring(codeM[0].length);
+      const im = rest.match(unitPat);
+      const name = rest.substring(0, rest.indexOf(im[0])).trim();
+      parsed.push({
+        id: Date.now() + Math.random(),
+        code: codeM[1],
+        name,
+        unit: im[1],
+        qty: parseFloat(im[2]),
+        price: parseFloat(im[3].replace(/,/g, '')),
+        note: ''
+      });
+    } else if (parsed.length > 0 && !skipPat.test(t)) {
+      parsed[parsed.length - 1].name += t;   // 續接品名（如「（22支入）」「型光板-5mm」「PEEK材質」）
     }
-  }
-
-  // 解析每一行：CODE NAME UNIT QTY PRICE AMOUNT
-  const unitPat = /(組|個|式|支|包|套|片|條|瓶|罐|本)\s+(\d+(?:\.\d+)?)\s+([\d,]+)\s+([\d,]+)/;
-  const parsed = [];
-
-  for (const row of merged) {
-    const codeM = row.match(/^([A-Z][A-Z0-9\-\.]*)\s/);
-    if (!codeM) continue;
-
-    const code = codeM[1];
-    const rest = row.substring(codeM[0].length);
-    const itemM = rest.match(unitPat);
-    if (!itemM) continue;
-
-    const name = rest.substring(0, rest.indexOf(itemM[0])).trim();
-    const unit = itemM[1];
-    const qty  = parseFloat(itemM[2]);
-    const price = parseFloat(itemM[3].replace(/,/g, ''));
-
-    parsed.push({ id: Date.now() + Math.random(), code, name, unit, qty, price, note: '' });
   }
 
   if (parsed.length === 0) throw new Error('未解析到任何品項');
@@ -719,7 +776,34 @@ function upd(){
   pp.innerHTML = (bk||ac)
     ? `<strong>${t('payment_hdr')}</strong><br>${t('payment_bank')}${bk}<br>${t('payment_acct')}${ac}`
     : '';
+
+  fitPreview();
 }
+
+/* ── Mobile View Switch & Preview Auto-scale ── */
+function setView(v){
+  document.body.setAttribute('data-view', v);
+  document.querySelectorAll('.m-tab').forEach(b=>b.classList.toggle('active', b.dataset.mview===v));
+  if(v==='preview') fitPreview();
+}
+
+function fitPreview(){
+  const wrap = document.getElementById('invoice-scale');
+  const inv  = document.getElementById('invoice');
+  if(!wrap || !inv) return;
+  if(window.innerWidth > 900){            // 桌面：還原原始尺寸
+    inv.style.transform=''; wrap.style.width=''; wrap.style.height='';
+    return;
+  }
+  const panel = inv.closest('.preview-panel');
+  if(!panel || panel.clientWidth <= 0) return;   // 預覽未顯示時略過
+  const s = Math.min(1, (panel.clientWidth - 16) / 760);
+  inv.style.transform  = `scale(${s})`;
+  wrap.style.width  = (760 * s) + 'px';
+  wrap.style.height = (inv.offsetHeight * s) + 'px';
+}
+
+window.addEventListener('resize', fitPreview);
 
 /* ── Reset ── */
 function resetAll(){
